@@ -52,6 +52,19 @@
             <p class="text-gray-600 mt-2">Chọn một quán ăn và nhấn "Chỉ đường" để xem bản đồ trực tiếp!</p>
         </header>
 
+
+        <section class="bg-white p-4 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3 text-center">Tìm kiếm quán ăn</h2>
+            <div class="flex space-x-2" id="search-form">
+                <input type="search" id="search-input" placeholder="Nhập tên món ăn, địa chỉ..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                <button id="search-button" class="action-button bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    Tìm
+                </button>
+            </div>
+            <p id="search-status" class="text-gray-600 mt-3 text-sm min-h-[20px] text-center"></p>
+        </section>
+
         <section class="bg-white p-4 rounded-lg shadow-md mb-8 text-center">
             <h2 class="text-xl font-semibold text-gray-700 mb-3">Lấy Vị Trí Hiện Tại Của Bạn</h2>
             <button id="getLocationBtn" class="action-button bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">
@@ -152,30 +165,108 @@
             }
         });
 
-        // --- DỮ LIỆU & HIỂN THỊ DANH SÁCH QUÁN ĂN ---
-        const restaurants = [
-            { "name": "Bò Né 3 Ngon - Bò Quanh Lửa Hồng - Mậu Thân", "address": "41C Mậu Thân, P. An Nghiệp, Quận Ninh Kiều, Cần Thơ", "gps": "10.0406457640543, 105.7675960287451", "image_src": "https://images.foody.vn/res/g1/3655/s400/foody-bo-ne-3-ngon-bo-quanh-lua-hong-621-636306567996765799.jpg" },
-            { "name": "Bông Đẹp - Bánh Mì, Xôi Gà & Xôi Xá Xíu", "address": "84 Mậu Thân, P. An Hòa, Quận Ninh Kiều, Cần Thơ", "gps": "10.0424909000000, 105.7659488000000", "image_src": "https://images.foody.vn/res/g105/1043015/s400/foody-bong-dep-banh-mi-xoi-ga-xoi-xa-xiu-499-637688435134732598.jpg" },
-            { "name": "Mì Cay Omega - Huỳnh Thị Giang", "address": "21 Huỳnh Thị Giang, Quận Ô Môn, Cần Thơ", "gps": "10.1095943000000, 105.6204209000000", "image_src": "https://images.foody.vn/res/g27/264560/s400/foody-mi-cay-omega-264560-636259011982542459.jpg" },
-            { "name": "Bánh Ngọt 29", "address": "33 Đề Thám, P. An Cư, Quận Ninh Kiều, Cần Thơ", "gps": "10.0335670000000, 105.7828890000000", "image_src": "https://images.foody.vn/res/g27/266012/s400/foody-banh-ngot-29-266012-636262529729604313.jpg" },
-            { "name": "Kim Phụng - Bún Đậu Mắm Tôm", "address": "149H/17 Hẻm Liên Tổ 12-20 Nguyễn Văn Cừ, Cần Thơ", "gps": "10.0427500000000, 105.7618530000000", "image_src": "https://images.foody.vn/res/g28/272365/s400/foody-kim-phung-bun-dau-mam-tom-272365-636287900769351059.jpg" },
-            { "name": "Cơm Cháy Kho Quẹt Dì Ba", "address": "144/10/2B Vành Đai B, P. An Khánh, Quận Ninh Kiều, Cần Thơ", "gps": "10.0340330000000, 105.7538230000000", "image_src": "https://images.foody.vn/res/g101/1008681/s400/foody-com-chay-kho-quet-di-ba-813-637494480413008064.jpg" }
-        ];
-        document.getElementById('restaurant-list').innerHTML = restaurants.map(r => `
-            <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-                <img src="${r.image_src}" alt="Ảnh quán ${r.name}" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Không+có+ảnh';">
-                <div class="p-4 flex flex-col flex-grow"><h2 class="text-lg font-semibold text-gray-800 flex-grow">${r.name}</h2><p class="text-sm text-gray-600 mt-1 mb-4">${r.address}</p><button class="action-button navigate-button w-full mt-auto bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600" data-gps="${r.gps}" data-name="${r.name}">Chỉ đường</button></div></div>`).join('');
+        const API_URL = "http://127.0.0.1:5000"; // Địa chỉ máy chủ Python của bạn
+        const restaurantListEl = document.getElementById('restaurant-list');
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const searchStatus = document.getElementById('search-status');
+
+        // Hàm gọi API và hiển thị kết quả
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (query === "") {
+                searchStatus.textContent = "Vui lòng nhập từ khóa tìm kiếm.";
+                searchStatus.style.color = 'red';
+                return;
+            }
+
+            searchStatus.textContent = "Đang tìm kiếm...";
+            searchStatus.style.color = 'gray';
+            restaurantListEl.innerHTML = ''; // Xóa kết quả cũ
+
+            try {
+                const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Lỗi máy chủ: ${response.statusText}`);
+                }
+
+                const results = await response.json();
+                
+                if (results.length === 0) {
+                    searchStatus.textContent = "Không tìm thấy kết quả nào phù hợp.";
+                    searchStatus.style.color = 'gray';
+                } else {
+                    searchStatus.textContent = `Tìm thấy ${results.length} kết quả.`;
+                    searchStatus.style.color = 'green';
+                    renderRestaurantList(results);
+                }
+
+            } catch (error) {
+                console.error("Lỗi khi gọi API:", error);
+                searchStatus.textContent = "Lỗi: Không thể kết nối đến máy chủ tìm kiếm.";
+                searchStatus.style.color = 'red';
+            }
+        }
         
-        document.querySelectorAll('.navigate-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const gpsString = this.getAttribute('data-gps');
-                const restaurantName = this.getAttribute('data-name');
-                const [destLat, destLng] = gpsString.split(',').map(c => parseFloat(c.trim()));
-                currentDestination = { name: restaurantName, coords: { lat: destLat, lng: destLng } };
-                openMapModal();
-            });
+        // Gắn sự kiện cho nút tìm kiếm
+        searchButton.addEventListener('click', performSearch);
+        // Cho phép nhấn Enter để tìm
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
         });
 
+        // Hàm này render danh sách nhà hàng ra HTML
+        // Nó gần giống như code cũ, nhưng giờ nó là một hàm
+        function renderRestaurantList(restaurants) {
+            restaurantListEl.innerHTML = restaurants.map(r => {
+                // === SỬA LẠI LOGIC Ở ĐÂY ===
+                // Bây giờ, chúng ta chỉ cần kiểm tra xem 'r.image_src' có tồn tại hay không.
+                // Nếu có, nó chắc chắn là một URL đầy đủ từ backend.
+                const imageUrl = r.image_src 
+                               ? r.image_src 
+                               : 'https://placehold.co/600x400/e2e8f0/64748b?text=Không+có+ảnh';
+                
+                // Giữ nguyên phần còn lại
+                const hasGps = r.gps && r.gps.includes(',');
+                const directionButton = hasGps 
+                    ? `<button class="action-button navigate-button w-full mt-auto bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600" data-gps="${r.gps}" data-name="${r.name}">Chỉ đường</button>`
+                    : `<button class="w-full mt-auto bg-gray-300 text-gray-500 font-bold py-2 px-4 rounded-lg cursor-not-allowed" disabled>Không có GPS</button>`;
+                
+                return `
+                <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+                    <img src="${imageUrl}" alt="Ảnh quán ${r.name}" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Lỗi+tải+ảnh';">
+                    <div class="p-4 flex flex-col flex-grow">
+                        <h2 class="text-lg font-semibold text-gray-800 flex-grow">${r.name}</h2>
+                        <p class="text-sm text-gray-600 mt-1 mb-4">${r.address || 'Không có địa chỉ'}</p>
+                        ${directionButton}
+                    </div>
+                </div>`;
+            }).join('');
+            
+            addNavigateButtonListeners();
+        }
+        
+        // Hàm này gắn listener cho các nút "Chỉ đường"
+        function addNavigateButtonListeners() {
+            document.querySelectorAll('.navigate-button').forEach(button => {
+                // Xóa listener cũ (nếu có) để tránh gắn trùng lặp
+                button.removeEventListener('click', handleNavigateClick);
+                // Gắn listener mới
+                button.addEventListener('click', handleNavigateClick);
+            });
+        }
+        
+        // Tách hàm xử lý click ra riêng
+        function handleNavigateClick() {
+            const gpsString = this.getAttribute('data-gps');
+            const restaurantName = this.getAttribute('data-name');
+            const [destLat, destLng] = gpsString.split(',').map(c => parseFloat(c.trim()));
+            currentDestination = { name: restaurantName, coords: { lat: destLat, lng: destLng } };
+            openMapModal();
+        }
         // --- CÁC HÀM XỬ LÝ MODAL VÀ BẢN ĐỒ ---
         function openMapModal() {
             mapModalTitle.textContent = `Chỉ đường tới: ${currentDestination.name}`;
